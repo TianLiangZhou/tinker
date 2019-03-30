@@ -15,7 +15,8 @@
         "ext-simplexml": "*",
         "ext-curl": "*",
         "ext-openssl": "*",
-        "ext-libxml": "*"
+        "ext-libxml": "*",
+        "ext-dom": "*"
     },
     "require-dev": {
         "php": "~7.1",

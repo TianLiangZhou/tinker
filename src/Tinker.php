@@ -11,6 +11,7 @@ namespace Tinker;
 
 use Exception;
 use SimpleXMLElement;
+use Tinker\Support\SimpleXmlElement as TinkerSimpleXmlElement;
 
 abstract class Tinker implements TinkerInterface
 {
@@ -147,14 +148,7 @@ abstract class Tinker implements TinkerInterface
                 $formatData = json_encode($raw);
                 break;
             case 'xml':
-                $xml = new class("<$rootName/>") extends SimpleXMLElement {
-                    public function addCData($data)
-                    {
-                        $node = dom_import_simplexml($this);
-                        $no   = $node->ownerDocument;
-                        $node->appendChild($no->createCDATASection($data));
-                    }
-                };
+                $xml = new TinkerSimpleXmlElement("<$rootName/>");
                 array_walk_recursive($raw, function ($value, $name) use ($xml, $isCdata) {
                     if (is_numeric($value) || $isCdata == false) {
                         $xml->addChild($name, $value);
