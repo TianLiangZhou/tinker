@@ -100,7 +100,9 @@ class Wechat extends Pay
         $response = $this->curl(
             $url, $allParameters, 'xml', [], ['isCert' => $request->isCert(), 'isCdata' => true]
         );
-        return new WechatResponse($this->formatResponse($response), $request->getApiMethodName(), $this->getResponseFormat());
+        return new WechatResponse(
+            $this->formatResponse($response), $request->getApiMethodName(), $this->getResponseFormat()
+        );
     }
 
     /**
