@@ -14,9 +14,13 @@ use Tinker\Pay\Wechat\Request\WechatUnifiedOrderRequest;
 use Tinker\RequestInterface;
 use Tinker\Pay\Pay;
 use Tinker\ResponseInterface;
+use Tinker\Support\Arr;
 
 class Wechat extends Pay
 {
+    /**
+     * @var string
+     */
     public $gateway = 'https://api.mch.weixin.qq.com';
 
     /**
@@ -61,15 +65,7 @@ class Wechat extends Pay
      */
     public function getSignContent(array $parameters): string
     {
-        ksort($parameters);
-        // TODO: Implement getSignContent() method.
-        $query = '';
-        foreach ($parameters as $name => $value) {
-            if ($value && !is_array($value)) {
-                $query .= "$name=$value&";
-            }
-        }
-        return $query . 'key=' . $this->appKey;
+        return Arr::keySortQuery($parameters) . '&key=' . $this->appKey;
     }
 
     /**
@@ -130,14 +126,14 @@ class Wechat extends Pay
     /**
      * 通知校验
      *
-     * @param $result
+     * @param $arguments
      * @return array 返回验证的签名的数据
      * @throws Exception
      */
-    public function verification(array $result): array
+    public function verification(array $arguments): array
     {
         // TODO: Implement verification() method.
-        $xmlString = current($result);
+        $xmlString = current($arguments);
         if (empty($xmlString)) {
             throw new Exception("通知数据为空");
         }

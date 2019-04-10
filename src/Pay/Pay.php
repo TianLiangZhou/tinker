@@ -45,10 +45,10 @@ abstract class Pay extends Tinker implements PayInterface
     /**
      * 通知校验
      *
-     * @param $result
+     * @param $arguments
      * @return mixed
      */
-    abstract public function verification(array $result): array;
+    abstract public function verification(array $arguments): array;
 
     /**
      * @param $value

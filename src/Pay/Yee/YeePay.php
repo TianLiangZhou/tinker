@@ -17,10 +17,10 @@ class YeePay extends Pay
     /**
      * 通知校验
      *
-     * @param $result
+     * @param $arguments
      * @return mixed
      */
-    public function verification(array $result): array
+    public function verification(array $arguments): array
     {
         // TODO: Implement verification() method.
     }

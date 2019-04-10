@@ -14,6 +14,9 @@ use Tinker\Pay\Pay;
 use Exception;
 use SimpleXMLElement;
 use Tinker\ResponseInterface;
+use Tinker\Support\Aes;
+use Tinker\Support\Arr;
+use Tinker\Support\Openssl;
 
 /**
  * Class Alipay
@@ -21,18 +24,39 @@ use Tinker\ResponseInterface;
  */
 class Alipay extends Pay
 {
+    /**
+     * @var string
+     */
     public $gateway = "https://openapi.alipay.com/gateway.do";
 
+    /**
+     * @var string
+     */
     public $defaultApiVersion = '1.0';
 
+    /**
+     * @var string
+     */
     public $appAuthToken = '';
 
+    /**
+     * @var string
+     */
     public $authToken = '';
 
+    /**
+     * @var string
+     */
     public $encryptKey= '';
 
+    /**
+     * @var string
+     */
     public $encryptType = 'AES';
 
+    /**
+     *
+     */
     const SDK_VERSION = 'tinker-api-sdk';
 
     /**
@@ -42,15 +66,7 @@ class Alipay extends Pay
     public function getSignContent(array $parameters): string
     {
         // TODO: Implement getSignContent() method.
-        ksort($parameters);
-        $stringToBeSigned = [];
-        foreach ($parameters as $k => $v) {
-            if (empty($v) || is_array($v) || "@" == substr($v, 0, 1)) {
-                continue;
-            }
-            $stringToBeSigned[] = "$k=$v";
-        }
-        return implode('&', $stringToBeSigned);
+        return Arr::keySortQuery($parameters);
     }
 
     /**
@@ -65,22 +81,11 @@ class Alipay extends Pay
         if (empty($this->rsaPrivateKey)) {
             throw new Exception("您使用的私钥格式错误，请检查RSA私钥配置");
         }
-        $isFile = false;
-        if (!is_file($this->rsaPrivateKey)) {
-            $resource = "-----BEGIN RSA PRIVATE KEY-----\n" .
-                wordwrap($this->rsaPrivateKey, 64, "\n", true) .
-                "\n-----END RSA PRIVATE KEY-----";
-        } else {
-            $resource = openssl_get_privatekey(file_get_contents($this->rsaPrivateKey));
-            $isFile = true;
-        }
+        $alg = OPENSSL_ALGO_SHA1;
         if ("RSA2" == $this->getSignType()) {
-            openssl_sign($publicString, $sign, $resource, OPENSSL_ALGO_SHA256);
-        } else {
-            openssl_sign($publicString, $sign, $resource);
+            $alg = OPENSSL_ALGO_SHA256;
         }
-        $isFile && openssl_free_key($resource);
-        return base64_encode($sign);
+        return Openssl::signature($publicString, $this->rsaPrivateKey, $alg);
     }
 
     /**
@@ -91,24 +96,11 @@ class Alipay extends Pay
      */
     protected function verifySign($data, $sign): bool
     {
-        $isFile = false;
-        if (is_file($this->rsaPublicKey)) {
-            $res = openssl_get_publickey(file_get_contents($this->rsaPublicKey));
-        } else {
-            $res = "-----BEGIN PUBLIC KEY-----\n" .
-                    wordwrap($this->rsaPublicKey, 64, "\n", true) .
-                    "\n-----END PUBLIC KEY-----";
-        }
-        if (empty($res)) {
-            throw new Exception("支付宝RSA公钥错误。请检查公钥文件格式是否正确");
-        }
+        $alg = OPENSSL_ALGO_SHA1;
         if ("RSA2" == $this->getSignType()) {
-            $result = (openssl_verify($data, base64_decode($sign), $res, OPENSSL_ALGO_SHA256) === 1);
-        } else {
-            $result = (openssl_verify($data, base64_decode($sign), $res) === 1);
+            $alg = OPENSSL_ALGO_SHA256;
         }
-        $isFile && openssl_free_key($res);
-        return $result;
+        return Openssl::verify($data, base64_decode($sign), $this->rsaPublicKey, $alg);
     }
 
     /**
@@ -293,9 +285,7 @@ EOF;
     public function encrypt(string $content)
     {
         $secret = base64_decode($this->getEncryptKey());
-        $method = $this->getEncryptMethod($secret);
-        $encrypt = @openssl_encrypt($content, $method, $secret, OPENSSL_RAW_DATA);
-        return base64_encode($encrypt);
+        return base64_encode(Aes::encrypt($content, $secret));
     }
 
     /**
@@ -305,46 +295,28 @@ EOF;
     public function decrypt(string $encrypt)
     {
         $secret = base64_decode($this->getEncryptKey());
-        $method = $this->getEncryptMethod($secret);
         $content = base64_decode($encrypt);
-        return openssl_decrypt($content, $method, $secret, 1);
-    }
-
-    /**
-     * @param string $secret
-     * @return string
-     */
-    public function getEncryptMethod(string $secret)
-    {
-        $len = strlen($secret);
-        if ($len <= 16) {
-            $method = 'AES-128-CBC';
-        } elseif ($len > 16 && $len <= 24) {
-            $method = 'AES-192-CBC';
-        } else {
-            $method = 'AES-256-CBC';
-        }
-        return $method;
+        return Aes::decrypt($content, $secret);
     }
 
     /**
      * 通知校验
      *
-     * @param $result
+     * @param $arguments
      * @return array
      * @throws Exception
      */
-    public function verification(array $result): array
+    public function verification(array $arguments): array
     {
         // TODO: Implement verification() method.
-        if (empty($result['sign'])) {
+        if (empty($arguments['sign'])) {
             throw new Exception("错误的通知参数");
         }
-        $sign = $result['sign'];
-        unset($result['sign_type'], $result['sign']);
-        if (!$this->verifySign($this->getSignContent($result), $sign)) {
+        $sign = $arguments['sign'];
+        unset($arguments['sign_type'], $arguments['sign']);
+        if (!$this->verifySign($this->getSignContent($arguments), $sign)) {
             throw new Exception("签名验证失败");
         }
-        return $result;
+        return $arguments;
     }
 }
