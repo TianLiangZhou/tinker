@@ -74,4 +74,16 @@ class TaobaoResponse extends TinkerResponse
         }
         return 'unknown';
     }
+
+    /**
+     * 最后出错的错误码
+     *
+     * @return mixed
+     */
+    public function lastErrorCode()
+    {
+        // TODO: Implement lastErrorCode() method.
+        $body = $this->getBody();
+        return $body->sub_code ?? 'unknown';
+    }
 }

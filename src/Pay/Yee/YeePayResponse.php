@@ -1,12 +1,12 @@
 <?php
 
 
-namespace Tinker\Pay\Union;
+namespace Tinker\Pay\Yee;
 
 
 use Tinker\TinkerResponse;
 
-class UnionResponse extends TinkerResponse
+class YeePayResponse extends TinkerResponse
 {
 
     /**
@@ -17,8 +17,8 @@ class UnionResponse extends TinkerResponse
     public function isSuccess(): bool
     {
         // TODO: Implement isSuccess() method.
-        $response = $this->getBody(true);
-        if ($response['respCode'] == '00') {
+        $body = $this->getBody();
+        if ($body->state == 'SUCCESS') {
             return true;
         }
         return false;
@@ -26,14 +26,13 @@ class UnionResponse extends TinkerResponse
 
     /**
      * 获取错误信息
-     *
      * @return string
      */
     public function errorMessage(): string
     {
         // TODO: Implement errorMessage() method.
-        $response = $this->getBody(true);
-        return $response['respMsg'] ?? 'unknown';
+        $body = $this->getBody();
+        return $body->error->message ?? 'unknown';
     }
 
     /**
@@ -44,7 +43,7 @@ class UnionResponse extends TinkerResponse
     public function lastErrorCode()
     {
         // TODO: Implement lastErrorCode() method.
-        $response = $this->getBody(true);
-        return $response['respCode'] ?? 'unknown';
+        $body = $this->getBody();
+        return $body->error->code ?? 'unknown';
     }
 }

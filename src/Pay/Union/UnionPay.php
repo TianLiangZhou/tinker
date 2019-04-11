@@ -99,7 +99,7 @@ class UnionPay extends Pay
         // TODO: Implement verification() method.
         $signature = $arguments['signature'];
         unset($arguments['signature']);
-        $queryString = Arr::keySortQuery($arguments);
+        $queryString = Arr::sortQuery($arguments);
         $verify = false;
         if ($arguments['signMethod'] == $this->getSignType()) {
             switch ($arguments['version']) {
@@ -120,8 +120,10 @@ class UnionPay extends Pay
             $selfSign = hash('sha256', $queryString . '&' . hash('sha256', $this->encryptKey));
             $verify = $selfSign == $signature;
         }
-        return $verify;
-
+        if ($verify) {
+            return $arguments;
+        }
+        throw new Exception("验证失败");
     }
 
     /**
@@ -175,7 +177,7 @@ class UnionPay extends Pay
     public function getSignContent(array $parameters): string
     {
         // TODO: Implement getSignContent() method.
-        return Arr::keySortQuery($parameters);
+        return Arr::sortQuery($parameters);
     }
 
     /**

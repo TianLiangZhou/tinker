@@ -13,6 +13,21 @@ use Exception;
 class Openssl
 {
     /**
+     * @param $data
+     * @param $privateRsa
+     * @return mixed
+     * @throws Exception
+     */
+    public static function privateDecrypt($data, $privateRsa)
+    {
+        $resource = self::loadPrivateRsa($privateRsa);
+        openssl_private_decrypt($data, $decrypt, $resource);
+        is_resource($resource) && openssl_free_key($resource);
+        return $decrypt;
+    }
+
+
+    /**
      * @param string $data
      * @param string $signature
      * @param string $rsa
@@ -22,7 +37,37 @@ class Openssl
      */
     public static function verify(string $data, string $signature, string $rsa, int $alg = OPENSSL_ALGO_SHA1)
     {
-        $isFile = false;
+        $resource = self::loadPublicRsa($rsa);
+        $result = (openssl_verify($data, $signature, $resource, $alg) === 1);
+        is_resource($resource) && openssl_free_key($resource);
+        return $result;
+    }
+
+    /**
+     * @param string $data
+     * @param string $rsa
+     * @param int $alg
+     * @return string
+     * @throws Exception
+     */
+    public static function signature(string $data, string $rsa, int $alg = OPENSSL_ALGO_SHA1, bool $safeBase64 = false)
+    {
+        $resource = self::loadPrivateRsa($rsa);
+        openssl_sign($data, $signature, $resource, $alg);
+        is_resource($resource) && openssl_free_key($resource);
+        if ($safeBase64) {
+            return Str::urlSafeEncode($signature);
+        }
+        return base64_encode($signature);
+    }
+
+    /**
+     * @param $rsa
+     * @return resource|string
+     * @throws Exception
+     */
+    public static function loadPublicRsa($rsa)
+    {
         if (is_file($rsa)) {
             $res = openssl_get_publickey(file_get_contents($rsa));
         } else {
@@ -33,31 +78,27 @@ class Openssl
         if (empty($res)) {
             throw new Exception("Rsa read error");
         }
-        $result = (openssl_verify($data, $signature, $res, $alg) === 1);
-        $isFile && openssl_free_key($res);
-        return $result;
+        return $res;
     }
 
     /**
-     * @param string $data
-     * @param string $rsa
-     * @param int $alg
-     * @return string
+     * @param $rsa
+     * @return resource|string
+     * @throws Exception
      */
-    public static function signature(string $data, string $rsa, int $alg = OPENSSL_ALGO_SHA1)
+    public static function loadPrivateRsa($rsa)
     {
-        $isFile = false;
         if (!is_file($rsa)) {
             $resource = "-----BEGIN RSA PRIVATE KEY-----\n" .
                 wordwrap($rsa, 64, "\n", true) .
                 "\n-----END RSA PRIVATE KEY-----";
         } else {
             $resource = openssl_get_privatekey(file_get_contents($rsa));
-            $isFile = true;
         }
-        openssl_sign($data, $signature, $resource, $alg);
-        $isFile && openssl_free_key($resource);
-        return base64_encode($signature);
+        if (empty($res)) {
+            throw new Exception("Rsa read error");
+        }
+        return $resource;
     }
 
 }

@@ -8,6 +8,9 @@
 
 use Tinker\Pay\Union\Request\BackendTransRequest;
 use Tinker\Pay\Union\UnionPay;
+use Tinker\Pay\Yee\Request\OrderQueryRequest;
+use Tinker\Pay\Yee\Request\TransOrderRequest;
+use Tinker\Pay\Yee\YeePay;
 
 include __DIR__ . '/../vendor/autoload.php';
 
@@ -28,4 +31,25 @@ $request->setBizContent([
     'backUrl' => 'https://example.com/notify',   //后台通知地址
 ]);
 $response = $union->execute($request);
+
+
+$yeepay = new YeePay('100***', 'OPR:100***');
+
+$yeepay->setRsaPrivateKey('privateKey');
+
+$request = new TransOrderRequest();
+$request->setBizContent([
+    'orderId' => '2014102419225940460000460',
+    'orderAmount' => sprintf('%.2f', 100),
+    'timeoutExpress' => 60,
+    'requestDate' => date('Y-m-d H:i:s'),
+    'directPayType' => 'ICB',
+    'notifyUrl' => 'https://example.com/notify',
+    'goodsParamExt' => json_encode([
+        'goodsName' => sprintf('战旗直播%s金币', 10000),
+        'goodsDesc' => sprintf('战旗直播%s金币', 10000),
+    ]),
+]);
+$response = $yeepay->execute($request);
+
 

@@ -28,7 +28,15 @@ interface ResponseInterface
 
     /**
      * 获取错误信息
+     *
      * @return string
      */
     public function errorMessage(): string;
+
+    /**
+     * 最后出错的错误码
+     *
+     * @return mixed
+     */
+    public function lastErrorCode();
 }

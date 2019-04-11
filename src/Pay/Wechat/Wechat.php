@@ -65,7 +65,7 @@ class Wechat extends Pay
      */
     public function getSignContent(array $parameters): string
     {
-        return Arr::keySortQuery($parameters) . '&key=' . $this->appKey;
+        return Arr::sortQuery($parameters) . '&key=' . $this->appKey;
     }
 
     /**

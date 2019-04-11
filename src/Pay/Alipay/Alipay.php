@@ -66,7 +66,7 @@ class Alipay extends Pay
     public function getSignContent(array $parameters): string
     {
         // TODO: Implement getSignContent() method.
-        return Arr::keySortQuery($parameters);
+        return Arr::sortQuery($parameters);
     }
 
     /**

@@ -46,4 +46,15 @@ class WechatResponse extends TinkerResponse
         }
         return 'unknown';
     }
+
+    /**
+     * 最后出错的错误码
+     *
+     * @return mixed
+     */
+    public function lastErrorCode()
+    {
+        // TODO: Implement lastErrorCode() method.
+        return $this->body->err_code ?? 'unknown';
+    }
 }

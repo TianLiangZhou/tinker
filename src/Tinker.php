@@ -46,6 +46,9 @@ abstract class Tinker implements TinkerInterface
      */
     protected $isCheckRequest = false;
 
+    /**
+     * @var string 网关地址
+     */
     public $gateway;
     /**
      * @var array
