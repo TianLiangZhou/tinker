@@ -46,8 +46,8 @@ $request->setBizContent([
     'directPayType' => 'ICB',
     'notifyUrl' => 'https://example.com/notify',
     'goodsParamExt' => json_encode([
-        'goodsName' => sprintf('战旗直播%s金币', 10000),
-        'goodsDesc' => sprintf('战旗直播%s金币', 10000),
+        'goodsName' => sprintf('xxx%sxxx', 10000),
+        'goodsDesc' => sprintf('xxx%sxxx', 10000),
     ]),
 ]);
 $response = $yeepay->execute($request);
