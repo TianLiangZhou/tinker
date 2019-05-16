@@ -33,7 +33,7 @@ class Arr
     /**
      * @param array $headers
      * @param string $split
-     * @return string
+     * @return array
      */
     public static function header(array $headers, callable $encode = null): array
     {

@@ -10,8 +10,7 @@ namespace Tinker;
 
 
 use Exception;
-use SimpleXMLElement;
-use Tinker\Support\SimpleXmlElement as TinkerSimpleXmlElement;
+use Tinker\Support\Xml;
 
 abstract class Tinker implements TinkerInterface
 {
@@ -151,16 +150,7 @@ abstract class Tinker implements TinkerInterface
                 $formatData = json_encode($raw);
                 break;
             case 'xml':
-                $xml = new TinkerSimpleXmlElement("<$rootName/>");
-                array_walk_recursive($raw, function ($value, $name) use ($xml, $isCdata) {
-                    if (is_numeric($value) || $isCdata == false) {
-                        $xml->addChild($name, $value);
-                    } else {
-                        $xml->$name = null;
-                        $xml->$name->addCData($value);
-                    }
-                });
-                $formatData = $xml->asXML();
+                $formatData = Xml::import($raw, $rootName, $isCdata);
                 break;
             default:
                 $formatData = http_build_query($raw);
@@ -176,24 +166,12 @@ abstract class Tinker implements TinkerInterface
     {
         switch ($this->getResponseFormat()) {
             case 'xml':
-                $response = $this->xmlStringToSimpleXMLElement($responseString);
+                $response = Xml::simple($responseString);
                 break;
             default:
                 $response = json_decode($responseString);
         }
         return $response;
-    }
-
-    /**
-     * @param string $string
-     * @return SimpleXMLElement
-     */
-    protected function xmlStringToSimpleXMLElement(string $string, int $option = 0)
-    {
-        $disableLibxmlEntityLoader = libxml_disable_entity_loader(true);
-        $element = simplexml_load_string($string, SimpleXMLElement::class, $option);
-        libxml_disable_entity_loader($disableLibxmlEntityLoader);
-        return $element;
     }
 
     /**
