@@ -19,13 +19,15 @@ class ParameterBag implements \IteratorAggregate, \Countable
     /**
      * Parameter storage.
      */
-    protected $parameters;
+    protected $parameters = [];
     /**
      * @param array $parameters An array of parameters
      */
     public function __construct(array $parameters = array())
     {
-        $this->parameters = $parameters;
+        if ($parameters) {
+            $this->parameters = $parameters;
+        }
     }
     /**
      * Returns the parameters.
