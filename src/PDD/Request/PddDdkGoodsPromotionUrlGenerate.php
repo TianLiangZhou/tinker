@@ -36,7 +36,7 @@ class PddDdkGoodsPromotionUrlGenerate extends Request
      */
     public function setGenerateShortUrl(bool $isShort)
     {
-        $this->set('generate_short_url', $isShort);
+        $this->set('generate_short_url', $isShort ? 'true' : 'false');
     }
 
     /**
@@ -44,7 +44,7 @@ class PddDdkGoodsPromotionUrlGenerate extends Request
      */
     public function setMultiGroup(bool $isGroup)
     {
-        $this->set('multi_group', $isGroup);
+        $this->set('multi_group', $isGroup ? 'true' : 'false');
     }
 
     /**
@@ -60,7 +60,7 @@ class PddDdkGoodsPromotionUrlGenerate extends Request
      */
     public function setGenerateWeappWebview(bool $isWeApp)
     {
-        $this->set('generate_weapp_webview', $isWeApp);
+        $this->set('generate_weapp_webview', $isWeApp ? 'true' : 'false');
     }
 
     /**
@@ -76,7 +76,7 @@ class PddDdkGoodsPromotionUrlGenerate extends Request
      */
     public function setGenerateWeApp(bool $isWeApp)
     {
-        $this->set('generate_we_app', $isWeApp);
+        $this->set('generate_we_app', $isWeApp ? 'true' : 'false');
     }
 
     /**
@@ -84,7 +84,7 @@ class PddDdkGoodsPromotionUrlGenerate extends Request
      */
     public function setGenerateWeiboappWebview(bool $isWeiApp)
     {
-        $this->set('generate_weiboapp_webview', $isWeiApp);
+        $this->set('generate_weiboapp_webview', $isWeiApp ? 'true' : 'false');
     }
 
 

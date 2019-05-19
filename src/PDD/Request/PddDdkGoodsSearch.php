@@ -51,7 +51,7 @@ class PddDdkGoodsSearch extends Request
      */
     public function setWithCoupon(bool $isCoupon = true)
     {
-        $this->set('with_coupon', $isCoupon);
+        $this->set('with_coupon', $isCoupon ? 'true' : 'false');
     }
 
     /**

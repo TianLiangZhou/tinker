@@ -36,7 +36,7 @@ class PddDdkMallUrlGen extends Request
      */
     public function setGenerateWeappWebview(bool $isWeapp)
     {
-        $this->set('generate_weapp_webview', $isWeapp);
+        $this->set('generate_weapp_webview', $isWeapp ? 'true' : 'false');
     }
 
     /**
@@ -44,7 +44,7 @@ class PddDdkMallUrlGen extends Request
      */
     public function setGenerateShortUrl(bool $isShortUrl)
     {
-        $this->set('generate_short_url', $isShortUrl);
+        $this->set('generate_short_url', $isShortUrl ? 'true' : 'false');
     }
 
     /**
@@ -52,7 +52,7 @@ class PddDdkMallUrlGen extends Request
      */
     public function setMultiGroup(bool $isGroup)
     {
-        $this->set('multi_group', $isGroup);
+        $this->set('multi_group', $isGroup ? 'true' : 'false');
     }
 
     /**
@@ -60,7 +60,7 @@ class PddDdkMallUrlGen extends Request
      */
     public function setCustomParameters(string $custom)
     {
-        $this->set('custom_parameters', $custom);
+        $this->set('custom_parameters', $custom ? 'true' : 'false');
     }
 
 
