@@ -8,7 +8,6 @@
 
 namespace Tinker\Pay\Alipay;
 
-
 use Tinker\RequestInterface;
 use Tinker\Pay\Pay;
 use Exception;
@@ -104,10 +103,11 @@ class Alipay extends Pay
     }
 
     /**
-     * @param AlipayRequest $request
+     * @param RequestInterface $request
      * @param string $mode
-     * @return string
-     * @throws \Exception
+     * @return ResponseInterface
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @throws Exception
      */
     public function execute(RequestInterface $request, string $mode = "default"): ResponseInterface
     {
@@ -162,16 +162,9 @@ class Alipay extends Pay
         if ($mode == 'page') {
             return new AlipayResponse($this->buildRequestForm($allParameters), $request->getApiMethodName());
         }
+
         $requestUrl = $this->getGatewayUrl() . '?' . http_build_query($systemParameters);
-        try {
-            $responseString = $this->curl($requestUrl, $apiParameters);
-        } catch (Exception $e) {
-            throw $e;
-        }
-        if ($this->getCharset() != $this->systemCharset) {
-            $responseString = mb_convert_encoding($responseString, $this->systemCharset, $this->getCharset());
-        }
-        $response = $this->formatResponse($responseString);
+        $response = $this->getResponse($requestUrl, $apiParameters);
         $this->checkResponseSign($response, $request->getApiMethodName());
         if ($request->isEncrypt()) {
             $response = $this->formatResponse($this->decryptResponse($response, $request->getApiMethodName()));
@@ -252,7 +245,7 @@ EOF;
         $postUrl = $this->getGatewayUrl() . '?charset=' . $this->getCharset();
         $hidden = [];
         foreach ($postData as $name => $value) {
-            if (!empty($value) && ($val = str_replace("'","&apos;", $value))) {
+            if (!empty($value) && ($val = str_replace("'", "&apos;", $value))) {
                 $hidden[] = <<<EOF
 <input type="hidden" name="$name" value='$val'/>
 EOF;

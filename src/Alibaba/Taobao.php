@@ -8,7 +8,6 @@
 
 namespace Tinker\Alibaba;
 
-
 use Exception;
 use Tinker\RequestInterface;
 use Tinker\ResponseInterface;
@@ -16,18 +15,7 @@ use Tinker\Tinker;
 
 class Taobao extends Tinker
 {
-
     public $gateway = "http://gw.api.taobao.com/router/rest";
-
-    /**
-     * @var string
-     */
-    private $appId;
-
-    /**
-     * @var string
-     */
-    private $appSecret;
 
     /**
      * @var string
@@ -40,17 +28,14 @@ class Taobao extends Tinker
      * Taobao constructor.
      * @param string $appId
      * @param string $appSecret
+     * @param array $options
      */
-    public function __construct(string $appId, string $appSecret)
+    public function __construct(string $appId, string $appSecret, array $options = [])
     {
-        $this->appId = $appId;
-
-        $this->appSecret = $appSecret;
-
+        parent::__construct(array_merge(['appId' => $appId, 'appSecret' => $appSecret,], $options));
         $this->setSignType('md5');
         $this->setResponseFormat('json');
-
-        $this->setIsCheckRequest(true);
+        $this->setCheckRequest(true);
     }
 
 
@@ -94,7 +79,8 @@ class Taobao extends Tinker
     /**
      * @param RequestInterface $request
      * @param string $session
-     * @throws Exception
+     * @return ResponseInterface
+     * @throws \GuzzleHttp\Exception\GuzzleException
      */
     public function execute(RequestInterface $request, string $session = ""): ResponseInterface
     {
@@ -117,10 +103,12 @@ class Taobao extends Tinker
         }
         $apiParameters = $request->getApiParameters();
         $systemParameters['sign'] = $this->sign($this->getSignContent(array_merge($systemParameters, $apiParameters)));
-
         $requestUrl = $this->getGatewayUrl()  . '?' . http_build_query($systemParameters);
-        $response = $this->formatResponse($this->curl($requestUrl, $apiParameters));
-        return new TaobaoResponse($response, $request->getApiMethodName(), $this->getResponseFormat());
+        return new TaobaoResponse(
+            $this->getResponse($requestUrl, ['form_params' => $apiParameters]),
+            $request->getApiMethodName(),
+            $this->getResponseFormat()
+        );
     }
 
     /**
@@ -130,23 +118,5 @@ class Taobao extends Tinker
     {
         // TODO: Implement getGatewayUrl() method.
         return $this->gateway;
-    }
-
-    /**
-     * @param string $appId
-     */
-    public function setAppId(string $appId): Taobao
-    {
-        $this->appId = $appId;
-        return $this;
-    }
-
-    /**
-     * @param string $appSecret
-     */
-    public function setAppSecret(string $appSecret): Taobao
-    {
-        $this->appSecret = $appSecret;
-        return $this;
     }
 }

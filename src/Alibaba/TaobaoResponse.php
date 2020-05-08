@@ -8,7 +8,6 @@
 
 namespace Tinker\Alibaba;
 
-
 use stdClass;
 use Tinker\TinkerResponse;
 

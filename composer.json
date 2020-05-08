@@ -1,26 +1,26 @@
 {
     "name": "meshell/tinker",
-    "description": "平台通用API调用SDK, 支持淘宝，支付宝，阿里云，腾讯",
+    "description": "平台通用API调用SDK, 支持淘宝，支付宝，阿里云，腾讯, 京东",
     "type": "library",
     "license": "MIT",
     "authors": [
         {
-            "name": "zhoutianliang",
+            "name": "Mickey.DouDou",
             "email": "mfkgdyve@gmail.com"
         }
     ],
     "require": {
-        "php": "^7.1",
+        "php": ">=7.2",
         "ext-json": "*",
         "ext-simplexml": "*",
         "ext-curl": "*",
         "ext-openssl": "*",
         "ext-libxml": "*",
-        "ext-dom": "*"
+        "ext-dom": "*",
+        "guzzlehttp/guzzle": "^6.5.2"
     },
     "require-dev": {
-        "php": "^7.1",
-        "phpunit/phpunit": "^7",
+        "phpunit/phpunit": "^8",
         "friendsofphp/php-cs-fixer": "^2.3",
         "squizlabs/php_codesniffer": "^3.0",
         "php-coveralls/php-coveralls": "^2.0"

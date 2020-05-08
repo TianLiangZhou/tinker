@@ -22,6 +22,7 @@ interface ResponseInterface
     /**
      * 返回的结果实体
      *
+     * @param bool $isRaw
      * @return mixed
      */
     public function getBody($isRaw = false);

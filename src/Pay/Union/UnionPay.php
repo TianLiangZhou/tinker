@@ -78,13 +78,15 @@ class UnionPay extends Pay
     /**
      * UnionPay constructor.
      * @param string $appId
-     * @param string|null $appKey
+     * @param string|null $appSecret
+     * @param array $options
      */
-    public function __construct(string $appId, ?string $appKey = '')
+    public function __construct(string $appId, ?string $appSecret = '', array $options = [])
     {
-        parent::__construct($appId, $appKey);
+        parent::__construct($appId, $appSecret, $options);
 
         $this->setSignType('01');
+        $this->setResponseFormat('parse');
     }
 
     /**
@@ -106,13 +108,19 @@ class UnionPay extends Pay
                 case '5.1.0':
                     $certString = $this->verifyCert($arguments['signPubKeyCert']);
                     $verify = (bool) openssl_verify(
-                        hash('sha256', $queryString), base64_decode($signature), $certString, 'sha256'
+                        hash('sha256', $queryString),
+                        base64_decode($signature),
+                        $certString,
+                        'sha256'
                     );
                     break;
                 case '5.0.0':
                     $certString = $this->getPublicKeyByCertId($arguments['certId']);
                     $verify = (bool) openssl_verify(
-                        sha1($queryString, false), base64_decode($signature), $certString, OPENSSL_ALGO_SHA1
+                        sha1($queryString, false),
+                        base64_decode($signature),
+                        $certString,
+                        OPENSSL_ALGO_SHA1
                     );
                     break;
             }
@@ -149,7 +157,7 @@ class UnionPay extends Pay
                         break;
                     case '5.1.0':
                         //a256签名摘要
-                        $paramsSha256x16 = hash( 'sha256', $publicString);
+                        $paramsSha256x16 = hash('sha256', $publicString);
                         // 签名
                         $result = openssl_sign($paramsSha256x16, $signature, $cert['key'], 'sha256');
                         break;
@@ -164,7 +172,6 @@ class UnionPay extends Pay
                 return hash('sha256', $paramsBeforeSha256);
         }
         throw new Exception("签名方法不支持");
-
     }
 
     /**
@@ -231,7 +238,9 @@ class UnionPay extends Pay
             throw new Exception("证书已过期");
         }
         $result = openssl_x509_checkpurpose(
-            $base64PublicKey, X509_PURPOSE_ANY, [$this->rootCertPath, $this->middleCertPath]
+            $base64PublicKey,
+            X509_PURPOSE_ANY,
+            [$this->rootCertPath, $this->middleCertPath]
         );
         if (!$result) {
             throw new Exception("数据验证失败");
@@ -276,20 +285,21 @@ class UnionPay extends Pay
      * @param RequestInterface $method
      * @param string $mode
      * @return ResponseInterface
-     * @throws \Exception
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @throws Exception
      */
     public function execute(RequestInterface $method, string $mode = "default"): ResponseInterface
     {
         // TODO: Implement execute() method.
 
         $systemParameters = [
-            'version' => $this->version,                 //版本号
-            'encoding' => $this->getCharset(),				  //编码方式
-            'signMethod' => $this->getSignType(),	     //签名方法
-            'channelType' => $this->channel,	              //渠道类型，07-PC，08-手机
-            'accessType' => $this->access,		          //接入类型
-            'merId' => $this->appId,	      //商户代码，
-            'txnTime' => date("YmdHis"),	//订单发送时间，格式为YYYYMMDDhhmmss
+            'version' => $this->version, // 版本号
+            'encoding' => $this->getCharset(), // 编码方式
+            'signMethod' => $this->getSignType(), // 签名方法
+            'channelType' => $this->channel, // 渠道类型，07-PC，08-手机
+            'accessType' => $this->access, // 接入类型
+            'merId' => $this->appId, // 商户代码，
+            'txnTime' => date("YmdHis"), // 订单发送时间，格式为YYYYMMDDhhmmss
         ];
         $requestParameters = $method->getApiParameters();
         $requestUrl = $this->gateway . $method->getApiMethodName();
@@ -300,9 +310,10 @@ class UnionPay extends Pay
         }
         $signature = $this->sign($this->getSignContent($parameters));
         $parameters['signature'] = $signature;
-        $responseString = $this->curl($requestUrl, $parameters);
-        parse_str($responseString, $response);
-        return new UnionResponse($response, $method->getApiMethodName());
+        return new UnionResponse(
+            $this->getResponse($requestUrl, $parameters),
+            $method->getApiMethodName()
+        );
     }
 
     /**

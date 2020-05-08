@@ -76,9 +76,11 @@ class Xml
     {
         $backup = libxml_disable_entity_loader(true);
         $backup_errors = libxml_use_internal_errors(true);
-        $xml = simplexml_load_string(self::sanitize($inputXml),
-                'SimpleXMLElement',
-                LIBXML_COMPACT | LIBXML_NOCDATA | LIBXML_NOBLANKS);
+        $xml = simplexml_load_string(
+            self::sanitize($inputXml),
+            'SimpleXMLElement',
+            LIBXML_COMPACT | LIBXML_NOCDATA | LIBXML_NOBLANKS
+        );
         libxml_disable_entity_loader($backup);
         libxml_clear_errors();
         libxml_use_internal_errors($backup_errors);
@@ -99,13 +101,8 @@ class Xml
      *
      * @return string
      */
-    public static function build(
-        $data,
-        $root = 'xml',
-        $item = 'item',
-        $attr = '',
-        $id = 'id'
-    ) {
+    public static function build($data, $root = 'xml', $item = 'item', $attr = '', $id = 'id')
+    {
         if (is_array($attr)) {
             $_attr = [];
 

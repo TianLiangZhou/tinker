@@ -17,9 +17,6 @@ use Tinker\Tinker;
  */
 abstract class Pay extends Tinker implements PayInterface
 {
-    protected $appId = '';
-
-    protected $appKey = '';
 
     protected $notifyUrl = '';
 
@@ -33,13 +30,12 @@ abstract class Pay extends Tinker implements PayInterface
     /**
      * Pay constructor.
      * @param string $appId
-     * @param null|string $appKey
+     * @param string|null $appSecret
+     * @param array $options
      */
-    public function __construct(string $appId, ?string $appKey = '')
+    public function __construct(string $appId, ?string $appSecret = '', array $options = [])
     {
-        $this->appId = $appId;
-
-        $this->appKey= $appKey;
+        parent::__construct(array_merge(['appId' => $appId, 'appSecret' => $appSecret,], $options));
     }
 
     /**
@@ -70,6 +66,7 @@ abstract class Pay extends Tinker implements PayInterface
 
     /**
      * @param string $encryptKey
+     * @return PayInterface
      */
     public function setEncryptKey(string $encryptKey): PayInterface
     {

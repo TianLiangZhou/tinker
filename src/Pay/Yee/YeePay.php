@@ -34,12 +34,13 @@ class YeePay extends Pay
 
     /**
      * YeePay constructor.
-     * @param string $appId
-     * @param string $merchantNo
+     * @param string $appMerchantNo
+     * @param string $appKey
+     * @param array $options
      */
-    public function __construct(string $appMerchantNo, string $appKey)
+    public function __construct(string $appMerchantNo, string $appKey, array $options = [])
     {
-        parent::__construct($appMerchantNo, $appKey);
+        parent::__construct($appMerchantNo, $appKey, $options);
     }
 
     /**
@@ -112,6 +113,7 @@ class YeePay extends Pay
      *
      * @param array $parameters
      * @return string
+     * @throws Exception
      */
     public function getSignContent(array $parameters): string
     {
@@ -121,22 +123,25 @@ class YeePay extends Pay
         $timestamp = date('Y-m-d\TH:i:sO');
         $requestId = Str::uuid();
         $headers = [
-            'x-yop-appkey' => $this->appKey,
+            'x-yop-appkey' => $this->appSecret,
             'x-yop-date' => $timestamp,
             'x-yop-request-id' => $requestId,
         ];
         $protocolVersion = 'yop-auth-v2';
         $expiredSeconds = '1800';
         $queryString = Arr::sortQuery($parameters, 'rawurlencode');
-        $authString = $protocolVersion . '/' . $this->appKey . '/' . $timestamp . '/' . $expiredSeconds;
+        $authString = $protocolVersion . '/' . $this->appSecret . '/' . $timestamp . '/' . $expiredSeconds;
         $queryHeaderString = implode("\n", Arr::header($headers, 'rawurlencode'));
         $headerSignString = implode(';', array_keys($headers));
         $canonicalRequest = $authString . "\nPOST\n" . $path . "\n" . $queryString . "\n" . $queryHeaderString;
         $signature = Openssl::signature(
-            $canonicalRequest, $this->rsaPrivateKey, OPENSSL_ALGO_SHA256, true
+            $canonicalRequest,
+            $this->rsaPrivateKey,
+            OPENSSL_ALGO_SHA256,
+            true
         );
-        $headers['Authorization'] = "YOP-RSA2048-SHA256 " . $protocolVersion . "/" . $this->appKey. "/" . $timestamp .
-            "/" . $expiredSeconds. "/" . $headerSignString. "/" . $signature . '$SHA256';
+        $headers['Authorization'] = "YOP-RSA2048-SHA256 " . $protocolVersion . "/" . $this->appSecret. "/" .
+            $timestamp . "/" . $expiredSeconds. "/" . $headerSignString. "/" . $signature . '$SHA256';
         return json_encode(Arr::header($headers));
     }
 
@@ -145,12 +150,13 @@ class YeePay extends Pay
      * @param string $mode
      * @return ResponseInterface
      * @throws \Exception
+     * @throws \GuzzleHttp\Exception\GuzzleException
      */
     public function execute(RequestInterface $method, string $mode = "default"): ResponseInterface
     {
         // TODO: Implement execute() method.
         $systemParameters = [
-            'appKey' => $this->appKey,
+            'appKey' => $this->appSecret,
             'v' => $this->version,
             'locale' => $this->locale,
             'ts' => time(),
@@ -163,9 +169,17 @@ class YeePay extends Pay
         $allParameters['method'] = $method->getApiMethodName();
         $headers = $this->getSignContent($allParameters);
         unset($allParameters['method']);
-        $response = $this->curl($url, $allParameters, 'form', json_decode($headers, true));
+        $response = $this->getResponse(
+            $url,
+            [
+                'form_params' => $allParameters,
+                'headers' => json_decode($headers, true),
+            ]
+        );
         return new YeePayResponse(
-            $this->formatResponse($response), $method->getApiMethodName(), $this->getResponseFormat()
+            $response,
+            $method->getApiMethodName(),
+            $this->getResponseFormat()
         );
     }
 

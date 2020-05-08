@@ -3,7 +3,6 @@
 
 namespace Tinker\JD;
 
-
 use Tinker\RequestInterface;
 use Tinker\ResponseInterface;
 use Tinker\Tinker;
@@ -15,16 +14,6 @@ class JD extends Tinker
     /**
      * @var string
      */
-    private $appId;
-
-    /**
-     * @var string
-     */
-    private $appSecret;
-
-    /**
-     * @var string
-     */
     private $apiVersion = "1.0";
 
 
@@ -32,13 +21,11 @@ class JD extends Tinker
      * Taobao constructor.
      * @param string $appId
      * @param string $appSecret
+     * @param array $options
      */
-    public function __construct(string $appId, string $appSecret)
+    public function __construct(string $appId, string $appSecret, array $options = [])
     {
-        $this->appId = $appId;
-
-        $this->appSecret = $appSecret;
-
+        parent::__construct(array_merge(['appId' => $appId, 'appSecret' => $appSecret,], $options));
         $this->setSignType('md5');
         $this->setResponseFormat('json');
     }
@@ -78,6 +65,7 @@ class JD extends Tinker
      * @param RequestInterface $request
      * @param string $session
      * @return ResponseInterface
+     * @throws \GuzzleHttp\Exception\GuzzleException
      */
     public function execute(RequestInterface $request, string $session = ""): ResponseInterface
     {
@@ -97,8 +85,11 @@ class JD extends Tinker
         $systemParameters['sign'] = $this->sign($this->getSignContent(array_merge($systemParameters, $apiParameters)));
 
         $requestUrl = $this->getGatewayUrl()  . '?' . http_build_query($systemParameters + $apiParameters);
-        $response = $this->formatResponse($this->curl($requestUrl, []));
-        return new JDResponse($response, $request->getApiMethodName(), $this->getResponseFormat());
+        return new JDResponse(
+            $this->getResponse($requestUrl),
+            $request->getApiMethodName(),
+            $this->getResponseFormat()
+        );
     }
 
     /**

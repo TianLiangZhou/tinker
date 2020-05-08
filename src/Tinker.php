@@ -8,12 +8,25 @@
 
 namespace Tinker;
 
-
-use Exception;
+use GuzzleHttp\Client as HttpClient;
+use GuzzleHttp\ClientInterface as HttpClientInterface;
+use GuzzleHttp\Exception\GuzzleException;
+use GuzzleHttp\Exception\RequestException;
 use Tinker\Support\Xml;
 
 abstract class Tinker implements TinkerInterface
 {
+
+    /**
+     *
+     */
+    const METHOD_POST = "POST";
+
+    /**
+     *
+     */
+    const METHOD_GET = "GET";
+
     /**
      * @var string
      */
@@ -43,119 +56,128 @@ abstract class Tinker implements TinkerInterface
     /**
      * @var bool
      */
-    protected $isCheckRequest = false;
+    protected $checkRequest = false;
 
     /**
      * @var string 网关地址
      */
     public $gateway;
+
+    /**
+     * @var string
+     */
+    protected $appId;
+
+    /**
+     * @var string
+     */
+    protected $appSecret;
+
+
+    protected $timeout = 5;
+
+    /**
+     * @var HttpClientInterface
+     */
+    protected $httpClient;
+
     /**
      * @var array
      */
-    private $contentType = [
-        'text' => 'text/plain',
-        'json' => 'application/json;charset=UTF-8',
-        'xml'  => 'application/xml',
-        'file' => 'multipart/form-data;charset=%s;boundary=%s',
-        'form' => 'application/x-www-form-urlencoded;charset=%s'
-    ];
-
-    public $timeout = 5;
+    private $options;
 
     /**
-     * @param bool $isCheckRequest
-     * @return $this;
+     * @var array
      */
-    public function setIsCheckRequest(bool $isCheckRequest): Tinker
-    {
-        $this->isCheckRequest = $isCheckRequest;
-        return $this;
-    }
+    protected $guarded = [];
 
     /**
-     * @param string $url
-     * @param array $postFields
-     * @param string $contentType
-     * @param array $header
+     * Tinker constructor.
      * @param array $options
-     * @return mixed
-     * @throws Exception
      */
-    protected function curl(
-        string $url,
-        array $postFields = [],
-        string $contentType = 'form',
-        array $headers = [],
-        array $options = []
-    )
+    public function __construct(array $options = [])
     {
-        $ch = curl_init();
-        $curlOptions = [
-            CURLOPT_URL => $url,
-            CURLOPT_FAILONERROR => false,
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_SSL_VERIFYPEER => false,
-            CURLOPT_POST => count($postFields) ? true : false
-        ];
-        if (isset($options['isCert']) && $options['isCert'] && $this->rsaPublicKey && $this->rsaPrivateKey) {
-            $curlOptions[CURLOPT_SSLCERTTYPE] = 'PEM';
-            $curlOptions[CURLOPT_SSLCERT] = $this->rsaPrivateKey;
-            $curlOptions[CURLOPT_SSLKEYTYPE] = 'PEM';
-            $curlOptions[CURLOPT_SSLKEY] = $this->rsaPublicKey;
+        $this->fillProperties($options);
+        if (empty($options['timeout'])) {
+            $options['timeout'] = $this->timeout;
         }
-        if (count($postFields) > 0) {
-            $rootName = isset($options['rootName']) ? $options['rootName'] : 'xml';
-            $isCdata  = isset($options['isCdata']) ? $options['isCdata'] : false;
-            $curlOptions[CURLOPT_POSTFIELDS] = $this->getFormatPostData(
-                $postFields, $contentType, $rootName, $isCdata
-            );
+        $this->options = $options;
+        if (empty($options['httpClient'])) {
+            $options['httpClient'] = function () use ($options) {
+                return new HttpClient($options);
+            };
         }
-        array_push($headers, $this->getContentType($contentType));
-        $curlOptions[CURLOPT_HTTPHEADER] = $headers;
-        curl_setopt_array($ch, $curlOptions);
-        $response = curl_exec($ch);
-        if (curl_errno($ch)) {
-            throw new Exception(curl_error($ch), 0);
-        } else {
-            $httpStatusCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-            if (200 !== $httpStatusCode) {
-                throw new Exception($response, $httpStatusCode);
-            }
-        }
-        curl_close($ch);
-        return $response;
+        $this->setHttpClient($options['httpClient']);
     }
 
     /**
-     * 根据类型返回对应的数据和头标识
-     *
-     * @param array $raw
-     * @param string $contentType
-     * @param string $rootName
-     * @param bool $isCdata
-     * @return array
+     * @return HttpClientInterface
      */
-    protected function getFormatPostData(
-        array $raw,
-        string $contentType = 'form',
-        string $rootName = 'root',
-        bool $isCdata = false
-    )
+    public function getHttpClient(): HttpClientInterface
     {
-        switch ($contentType) {
-            case 'text':
-                $formatData = implode("\n", $raw);
-                break;
-            case 'json':
-                $formatData = json_encode($raw);
-                break;
-            case 'xml':
-                $formatData = Xml::import($raw, $rootName, $isCdata);
-                break;
-            default:
-                $formatData = http_build_query($raw);
+        if (is_callable($this->httpClient)) {
+            $this->httpClient = call_user_func($this->httpClient, $this->options);
         }
-        return $formatData;
+        return $this->httpClient;
+    }
+
+    /**
+     * @param HttpClientInterface | callable $httpClient
+     */
+    public function setHttpClient($httpClient): void
+    {
+        $this->httpClient = $httpClient;
+    }
+
+
+    /**
+     * @param string $uri
+     * @param array $options
+     * @return \SimpleXMLElement|\stdClass
+     * @throws GuzzleException
+     */
+    protected function getResponse(string $uri, array $options = [])
+    {
+        $method = self::METHOD_GET;
+        if (!empty($options['body']) ||
+            !empty($options['form_params']) ||
+            !empty($options['multipart']) ||
+            !empty($options['json'])
+        ) {
+            $method = self::METHOD_POST;
+        }
+        $request = $this->createRequest($method, $uri, $options);
+        $response = $this->getHttpClient()->send($request, $options);
+        if ($response->getStatusCode() !== 200) {
+            throw new RequestException("请求异常", $request, $response);
+        }
+        return $this->formatResponse($response->getBody()->getContents());
+    }
+
+
+    /**
+     * @param string $method
+     * @param string $uri
+     * @param array $options
+     * @return \GuzzleHttp\Psr7\Request
+     */
+    private function createRequest(string $method, string $uri, array $options = [])
+    {
+        $defaults = [
+            'headers' => [],
+            'body'    => null,
+            'version' => '1.1',
+        ];
+
+        $options = array_merge($defaults, $options);
+
+        return new \GuzzleHttp\Psr7\Request(
+            $method,
+            $uri,
+            $options['headers'],
+            $options['body'],
+            $options['version']
+        );
     }
 
     /**
@@ -166,35 +188,17 @@ abstract class Tinker implements TinkerInterface
     {
         switch ($this->getResponseFormat()) {
             case 'xml':
-                $response = Xml::simple($responseString);
+                return Xml::simple($responseString);
                 break;
+            case 'json':
+                return json_decode($responseString);
+                break;
+            case 'parse':
+                parse_str($responseString, $response);
+                return $response;
             default:
-                $response = json_decode($responseString);
+                return $responseString;
         }
-        return $response;
-    }
-
-    /**
-     * @param string $contentType
-     * @return string
-     */
-    protected function getContentType(string $contentType)
-    {
-        $content = sprintf(
-            $this->contentType[$contentType] ?? $this->contentType['form'],
-            $this->getCharset(),
-            $this->getMillisecond()
-        );
-        return 'Content-Type: ' . $content;
-    }
-
-    /**
-     * @return float
-     */
-    public function getMillisecond()
-    {
-        list($s1, $s2) = explode(' ', microtime());
-        return (float) sprintf('%.0f', (floatval($s1) + floatval($s2)) * 1000);
     }
 
     /**
@@ -294,6 +298,20 @@ abstract class Tinker implements TinkerInterface
      */
     abstract public function getSignContent(array $parameters): string;
 
+
+    /**
+     *
+     * @param array $options
+     */
+    protected function fillProperties(array $options = [])
+    {
+        foreach ($options as $option => $value) {
+            if (property_exists($this, $option) && !$this->isGuarded($option)) {
+                $this->{$option} = $value;
+            }
+        }
+    }
+
     /**
      * 是否检测request参数
      *
@@ -301,6 +319,25 @@ abstract class Tinker implements TinkerInterface
      */
     public function isCheck(): bool
     {
-        return $this->isCheckRequest;
+        return $this->checkRequest;
+    }
+
+    /**
+     * @param bool $checkRequest
+     * @return $this;
+     */
+    public function setCheckRequest(bool $checkRequest): Tinker
+    {
+        $this->checkRequest = $checkRequest;
+        return $this;
+    }
+
+    /**
+     * @param string $option
+     * @return bool
+     */
+    private function isGuarded(string $option)
+    {
+        return $this->guarded && in_array($option, $this->guarded);
     }
 }

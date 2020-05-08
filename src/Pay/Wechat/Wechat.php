@@ -8,7 +8,6 @@
 
 namespace Tinker\Pay\Wechat;
 
-
 use Exception;
 use Tinker\Pay\Wechat\Request\WechatUnifiedOrderRequest;
 use Tinker\RequestInterface;
@@ -34,10 +33,11 @@ class Wechat extends Pay
      * @param string $appId
      * @param string $appKey
      * @param int $appMerchantId
+     * @param array $options
      */
-    public function __construct(string $appId, string $appKey, int $appMerchantId)
+    public function __construct(string $appId, string $appKey, int $appMerchantId, array $options = [])
     {
-        parent::__construct($appId, $appKey);
+        parent::__construct($appId, $appKey, $options);
         $this->merchantId = $appMerchantId;
         $this->setSignType('MD5');
         $this->setResponseFormat('json');
@@ -52,7 +52,7 @@ class Wechat extends Pay
         // TODO: Implement sign() method.
         switch ($this->getSignType()) {
             case 'HMAC-SHA256':
-                $sign = hash_hmac("sha256", $publicString, $this->appKey);
+                $sign = hash_hmac("sha256", $publicString, $this->appSecret);
                 break;
             default:
                 $sign = md5($publicString);
@@ -66,12 +66,14 @@ class Wechat extends Pay
      */
     public function getSignContent(array $parameters): string
     {
-        return Arr::sortQuery($parameters) . '&key=' . $this->appKey;
+        return Arr::sortQuery($parameters) . '&key=' . $this->appSecret;
     }
 
     /**
-     * @param WechatRequest $request
+     * @param RequestInterface $request
      * @param string $mode
+     * @return ResponseInterface
+     * @throws \GuzzleHttp\Exception\GuzzleException
      * @throws Exception
      */
     public function execute(RequestInterface $request, string $mode = "APP"): ResponseInterface
@@ -94,11 +96,21 @@ class Wechat extends Pay
         }
         $allParameters['sign'] = $this->sign($this->getSignContent($allParameters));
         $url = $this->getGatewayUrl() . $request->getApiMethodName();
-        $response = $this->curl(
-            $url, $allParameters, 'xml', [], ['isCert' => $request->isCert(), 'isCdata' => true]
-        );
+        $options = [
+            'body' =>  Xml::import($allParameters, 'xml', true),
+            'headers' => [
+                'Content-Type' => 'application/xml; charset=UTF8'
+            ],
+        ];
+        if ($request->isCert()) {
+            $options['cert'] = $this->rsaPublicKey;
+            $options['ssl_key'] = $this->rsaPrivateKey;
+        }
+        $response = $this->getResponse($url, $options);
         return new WechatResponse(
-            $this->formatResponse($response), $request->getApiMethodName(), $this->getResponseFormat()
+            $this->formatResponse($response),
+            $request->getApiMethodName(),
+            $this->getResponseFormat()
         );
     }
 

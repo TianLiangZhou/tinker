@@ -1,27 +1,33 @@
 <?php
 
+use Tinker\PDD\PDD;
+use Tinker\Request\PDD\PddDdkCouponInfoQuery;
+use Tinker\Request\PDD\PddDdkGoodsDetail;
+use Tinker\Request\PDD\PddDdkGoodsPromotionUrlGenerate;
+use Tinker\Request\PDD\PddDdkGoodsSearch;
+
 include __DIR__ . '/../vendor/autoload.php';
 
 
-$pdd = new \Tinker\PDD\PDD('xx', 'xx');
+$pdd = new PDD('xx', 'xx');
 
-$request = new \Tinker\PDD\Request\PddDdkGoodsPromotionUrlGenerate();
+$request = new PddDdkGoodsPromotionUrlGenerate();
 
 
 $request->setPid('8648987_64809720');
 $request->setGoodsIdList(7643510884);
 
 
-$request = new \Tinker\PDD\Request\PddDdkGoodsDetail();
+$request = new PddDdkGoodsDetail();
 
 $request->setGoodsIdList(7643510884);
 
-$request = new \Tinker\PDD\Request\PddDdkCouponInfoQuery();
+$request = new PddDdkCouponInfoQuery();
 
 $request->setCouponIds("804137372");
 
 
-$request = new \Tinker\PDD\Request\PddDdkGoodsSearch();
+$request = new PddDdkGoodsSearch();
 
 $request->setKeyword("女装");
 

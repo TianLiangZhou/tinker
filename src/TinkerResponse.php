@@ -8,7 +8,6 @@
 
 namespace Tinker;
 
-
 use SimpleXMLElement;
 use stdClass;
 
@@ -48,13 +47,13 @@ abstract class TinkerResponse implements ResponseInterface
         $this->method = $method;
 
         $this->format = $format;
-        
     }
 
     /**
      *
      * 返回的结果实体
      *
+     * @param bool $isRaw
      * @return SimpleXMLElement|stdClass
      */
     public function getBody($isRaw = false)

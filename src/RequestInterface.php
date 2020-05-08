@@ -8,7 +8,6 @@
 
 namespace Tinker;
 
-
 use Exception;
 
 /**

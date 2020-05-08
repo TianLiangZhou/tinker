@@ -16,16 +16,6 @@ class PDD extends Tinker
     /**
      * @var string
      */
-    private $appId;
-
-    /**
-     * @var string
-     */
-    private $appSecret;
-
-    /**
-     * @var string
-     */
     private $apiVersion = "v1";
 
 
@@ -33,17 +23,14 @@ class PDD extends Tinker
      * Taobao constructor.
      * @param string $appId
      * @param string $appSecret
+     * @param array $options
      */
-    public function __construct(string $appId, string $appSecret)
+    public function __construct(string $appId, string $appSecret, array $options = [])
     {
-        $this->appId = $appId;
-
-        $this->appSecret = $appSecret;
-
+        parent::__construct(array_merge(['appId' => $appId, 'appSecret' => $appSecret,], $options));
         $this->setSignType('md5');
         $this->setResponseFormat('json');
-
-        $this->setIsCheckRequest(true);
+        $this->setCheckRequest(true);
     }
 
     /**
@@ -79,9 +66,9 @@ class PDD extends Tinker
 
     /**
      * @param RequestInterface $request
-     * @param string $mode
+     * @param string $session
      * @return ResponseInterface
-     * @throws \Exception
+     * @throws \GuzzleHttp\Exception\GuzzleException
      */
     public function execute(RequestInterface $request, string $session = ""): ResponseInterface
     {
@@ -98,11 +85,16 @@ class PDD extends Tinker
             $systemParameters['access_token'] = $session;
         }
         $apiParameters = $request->getApiParameters();
-        $systemParameters['sign'] = $this->sign($this->getSignContent(array_merge($systemParameters, $apiParameters)));
 
-        $requestUrl = $this->getGatewayUrl();
-        $response = $this->formatResponse($this->curl($requestUrl, $systemParameters + $apiParameters));
-        return new PDDResponse($response, $request->getApiMethodName(), $this->getResponseFormat());
+        $systemParameters['sign'] = $this->sign($this->getSignContent(array_merge($systemParameters, $apiParameters)));
+        return new PDDResponse(
+            $this->getResponse(
+                $this->getGatewayUrl(),
+                ['form_params' => array_filter($systemParameters + $apiParameters)]
+            ),
+            $request->getApiMethodName(),
+            $this->getResponseFormat()
+        );
     }
 
     /**

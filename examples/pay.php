@@ -6,10 +6,10 @@
  * Time: 10:57
  */
 
-use Tinker\Pay\Union\Request\BackendTransRequest;
+use Tinker\Request\Pay\Union\BackendTransRequest;
 use Tinker\Pay\Union\UnionPay;
-use Tinker\Pay\Yee\Request\OrderQueryRequest;
-use Tinker\Pay\Yee\Request\TransOrderRequest;
+use Tinker\Request\Pay\Yee\OrderQueryRequest;
+use Tinker\Request\Pay\Yee\TransOrderRequest;
 use Tinker\Pay\Yee\YeePay;
 
 include __DIR__ . '/../vendor/autoload.php';
