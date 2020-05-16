@@ -1,13 +1,16 @@
 <?php
 
-
 namespace Tinker\Request\JD;
-
 
 use Exception;
 use Tinker\Request;
 
-class JdUnionOpenOrderQuery extends Request
+/**
+ * Class JdUnionOpenOrderRowQuery
+ * @package Tinker\Request\JD
+ * @see https://union.jd.com/openplatform/api/12707
+ */
+class JdUnionOpenOrderRowQuery extends Request
 {
 
     /**
@@ -15,21 +18,23 @@ class JdUnionOpenOrderQuery extends Request
      */
     protected $orderReq = [
         'orderReq' => [
-            'pageNo' => 1,
+            'pageIndex' => 1,
             'pageSize' => 20,
             'type' => 1,
-            'time' => '',
+            'startTime' => '',
+            'endTime' => '',
             'childUnionId' => 0,
             'key' => '',
+            'fields' => '',
         ]
     ];
 
     /**
-     * @param int $pageNo
+     * @param int $pageIndex
      */
-    public function setPageNo(int $pageNo)
+    public function setPageIndex(int $pageIndex)
     {
-        $this->orderReq['orderReq']['pageNo'] = $pageNo;
+        $this->orderReq['orderReq']['pageIndex'] = $pageIndex;
     }
 
     /**
@@ -51,9 +56,17 @@ class JdUnionOpenOrderQuery extends Request
     /**
      * @param string $time
      */
-    public function setTime(string $time)
+    public function setStartTime(string $time)
     {
-        $this->orderReq['orderReq']['time'] = $time;
+        $this->orderReq['orderReq']['startTime'] = $time;
+    }
+
+    /**
+     * @param string $time
+     */
+    public function setEndTime(string $time)
+    {
+        $this->orderReq['orderReq']['endTime'] = $time;
     }
 
     /**
@@ -73,6 +86,14 @@ class JdUnionOpenOrderQuery extends Request
     }
 
     /**
+     * @param string $fields
+     */
+    public function setFields(string $fields)
+    {
+        $this->orderReq['orderReq']['fields'] = $fields;
+    }
+
+    /**
      *
      */
     public function setParamJson()
@@ -87,7 +108,7 @@ class JdUnionOpenOrderQuery extends Request
     public function getApiMethodName(): string
     {
         // TODO: Implement getApiMethodName() method.
-        return "jd.union.open.order.query";
+        return "jd.union.open.order.row.query";
     }
 
     /**
