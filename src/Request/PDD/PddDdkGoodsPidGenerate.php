@@ -3,7 +3,6 @@
 
 namespace Tinker\Request\PDD;
 
-
 use Exception;
 use Tinker\Request;
 
@@ -27,12 +26,12 @@ class PddDdkGoodsPidGenerate extends Request
 
     /**
      * 推广位名称，例如["1","2"]
-     * 
+     *
      * @param array $name
      */
     public function setPidNameList(array $name)
     {
-        $this->set('p_id_name_list', '[' . implode(',', $name) . ']');
+        $this->set('p_id_name_list', json_encode($name));
     }
 
     /**
